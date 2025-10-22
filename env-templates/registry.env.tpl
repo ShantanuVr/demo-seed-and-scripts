@@ -1,0 +1,13 @@
+# Official Registry Sim Environment
+DATABASE_URL={{DATABASE_URL}}
+REDIS_URL={{REDIS_URL}}
+JWT_SECRET={{JWT_SECRET}}
+PORT=4000
+
+# Service URLs
+ADAPTER_URL={{ADAPTER_URL}}
+LOCKER_URL={{LOCKER_URL}}
+
+# Logging
+LOG_LEVEL=info
+NODE_ENV=development

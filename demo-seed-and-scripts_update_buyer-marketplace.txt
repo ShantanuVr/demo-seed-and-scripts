@@ -1,0 +1,59 @@
+Build Prompt — demo-seed-and-scripts (Update for buyer-marketplace integration)
+
+Role for recipient: You are the platform engineer maintaining orchestration/seeds. Extend the existing repo to add **buyer-marketplace (demo)** service, seed a BuyerCo user/org, and wire the end-to-end “buy + retire” steps into the `make demo` flow.
+
+1) Compose & Service
+- Add service `buyer-marketplace` on port :3004; depends_on registry, adapter, explorer.
+- Healthcheck: GET :3004/api/health
+- Environment template `/env-templates/buyer.env.tpl`:
+  NEXT_PUBLIC_REGISTRY_API_URL=http://registry-api:4000
+  NEXT_PUBLIC_ADAPTER_API_URL=http://adapter-api:4100
+  NEXT_PUBLIC_EXPLORER_BASE_URL=http://carbon-explorer:3002
+  NEXT_PUBLIC_BRAND_NAME=Carbon Market (Demo)
+  COOKIE_NAME=buyer_sess
+  COOKIE_SECURE=false
+
+2) Render & Restart
+- Update `scripts/render-env.ts` to render buyer env from template with actual URLs.
+- Update `make env` to include buyer.
+- After rendering, `docker compose restart buyer-marketplace` (or include in the group restart).
+
+3) Seed: Buyer Org & User
+- Update `scripts/seed-registry.ts`:
+  • Create org “BuyerCo” (if not exists).
+  • Create user buyer@buyerco.local / Buyer@123 with role=BUYER in BuyerCo.
+- Ensure `/credits/balance?ownerId=BuyerCo` works after transfers.
+
+4) Demo Flow Additions
+- Update `scripts/seed-issuance.ts` to ensure the class has ≥ 10_000 available.
+- Add `scripts/demo-transfer.ts` (if not present) to transfer 300 to BuyerCo **via registry `/credits/transfer`**.
+- Add `scripts/demo-retire.ts` to retire 150 for BuyerCo (purposeHash/beneficiaryHash precomputed).
+- Ensure both scripts print receipts and a `certificateId`.
+
+5) URLs Printer
+- Update `scripts/urls.ts` to include:
+  Buyer Marketplace: http://localhost:3004
+  Buyer login: http://localhost:3004/login (buyer@buyerco.local / Buyer@123)
+  Buyer dashboard: http://localhost:3004/buyer/dashboard
+  Order example: http://localhost:3004/buyer/orders/<ORDER_ID>  (if created)
+  Certificates: http://localhost:3004/buyer/certificates
+
+6) Makefile Targets
+- Add `make buyer` to render env + restart only marketplace.
+- `make demo` order unchanged except append marketplace URLs in summary.
+
+7) Smoke Tests
+- New checks in `scripts/smoke-tests.ts`:
+  • After `demo-transfer`, GET registry balance for BuyerCo shows +300 in classId.
+  • After `demo-retire`, GET certificate API returns the correct serial range and adapter txHash.
+  • GET buyer-marketplace /api/health returns ok.
+  • Optional: HTTP 200 on /buyer/dashboard after login with seeded credentials (session cookie).
+
+8) Docs
+- Update `docs/TOUR.md` to add the “marketplace” section (browse → add to cart → buy → retire → open explorer certificate).
+- Update printed summary box to include marketplace URLs and buyer credentials.
+
+9) Acceptance Criteria
+- `make demo` on a clean machine yields a working marketplace at :3004 with seeded BuyerCo user.
+- Transfers and retirements performed by scripts are visible in marketplace dashboard after first login (refresh holdings).
+- Summary prints marketplace URLs; smoke tests pass.

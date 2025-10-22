@@ -1,0 +1,276 @@
+version: '3.8'
+
+services:
+  # Infrastructure
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: carbon_registry
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  ipfs:
+    image: ipfs/kubo:latest
+    ports:
+      - "5001:5001"
+      - "8080:8080"
+    volumes:
+      - ipfs_data:/data/ipfs
+    environment:
+      IPFS_PROFILE: server
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5001/api/v0/id"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Blockchain
+  chain:
+    image: ghcr.io/foundry-rs/foundry:latest
+    command: anvil --host 0.0.0.0 --port 8545 --accounts 10 --balance 10000
+    ports:
+      - "8545:8545"
+    volumes:
+      - chain_data:/root/.anvil
+    healthcheck:
+      test: ["CMD", "curl", "-X", "POST", "-H", "Content-Type: application/json", "--data", "{\"jsonrpc\":\"2.0\",\"method\":\"net_version\",\"params\":[],\"id\":1}", "http://localhost:8545"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Core Services
+  official-registry-sim:
+    image: ghcr.io/carbon-credit/registry-sim:latest
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/carbon_registry
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: demo-jwt-secret-key-change-in-production
+      PORT: 4000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  registry-adapter-api:
+    image: ghcr.io/carbon-credit/registry-adapter:latest
+    ports:
+      - "4100:4100"
+    environment:
+      REGISTRY_URL: http://official-registry-sim:4000
+      CHAIN_RPC_URL: http://chain:8545
+      CHAIN_ID: 31337
+      PRIVATE_KEY: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+      PORT: 4100
+    depends_on:
+      official-registry-sim:
+        condition: service_healthy
+      chain:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4100/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  evidence-locker:
+    image: ghcr.io/carbon-credit/evidence-locker:latest
+    ports:
+      - "4600:4600"
+    environment:
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_BUCKET: evidence
+      IPFS_URL: http://ipfs:5001
+      PORT: 4600
+    depends_on:
+      minio:
+        condition: service_healthy
+      ipfs:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4600/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  iot-oracle:
+    image: ghcr.io/carbon-credit/iot-oracle:latest
+    ports:
+      - "4201:4201"
+    environment:
+      REGISTRY_URL: http://official-registry-sim:4000
+      ADAPTER_URL: http://registry-adapter-api:4100
+      REDIS_URL: redis://redis:6379
+      PORT: 4201
+    depends_on:
+      official-registry-sim:
+        condition: service_healthy
+      registry-adapter-api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4201/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  iot-solar-sim:
+    image: ghcr.io/carbon-credit/iot-solar-sim:latest
+    ports:
+      - "4200:4200"
+    environment:
+      ORACLE_URL: http://iot-oracle:4201
+      PORT: 4200
+    depends_on:
+      iot-oracle:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4200/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Frontend Applications
+  carbon-explorer:
+    image: ghcr.io/carbon-credit/carbon-explorer:latest
+    ports:
+      - "3002:3002"
+    environment:
+      NEXT_PUBLIC_REGISTRY_URL: http://localhost:4000
+      NEXT_PUBLIC_ADAPTER_URL: http://localhost:4100
+      NEXT_PUBLIC_LOCKER_URL: http://localhost:4600
+      PORT: 3002
+    depends_on:
+      official-registry-sim:
+        condition: service_healthy
+      registry-adapter-api:
+        condition: service_healthy
+      evidence-locker:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  issuer-portal:
+    image: ghcr.io/carbon-credit/issuer-portal:latest
+    ports:
+      - "3001:3001"
+    environment:
+      NEXT_PUBLIC_REGISTRY_URL: http://localhost:4000
+      NEXT_PUBLIC_LOCKER_URL: http://localhost:4600
+      PORT: 3001
+    depends_on:
+      official-registry-sim:
+        condition: service_healthy
+      evidence-locker:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  verifier-console:
+    image: ghcr.io/carbon-credit/verifier-console:latest
+    ports:
+      - "3003:3003"
+    environment:
+      NEXT_PUBLIC_REGISTRY_URL: http://localhost:4000
+      NEXT_PUBLIC_LOCKER_URL: http://localhost:4600
+      PORT: 3003
+    depends_on:
+      official-registry-sim:
+        condition: service_healthy
+      evidence-locker:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  buyer-marketplace:
+    image: ghcr.io/carbon-credit/buyer-marketplace:latest
+    ports:
+      - "3004:3004"
+    environment:
+      NEXT_PUBLIC_REGISTRY_API_URL: http://localhost:4000
+      NEXT_PUBLIC_ADAPTER_API_URL: http://localhost:4100
+      NEXT_PUBLIC_EXPLORER_BASE_URL: http://localhost:3002
+      NEXT_PUBLIC_BRAND_NAME: Carbon Market (Demo)
+      COOKIE_NAME: buyer_sess
+      COOKIE_SECURE: false
+      PORT: 3004
+    depends_on:
+      official-registry-sim:
+        condition: service_healthy
+      registry-adapter-api:
+        condition: service_healthy
+      carbon-explorer:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  default:
+    name: carbon-net
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  ipfs_data:
+  chain_data:

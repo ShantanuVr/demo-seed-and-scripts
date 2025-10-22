@@ -1,0 +1,12 @@
+# Verifier Console Environment
+NEXT_PUBLIC_REGISTRY_URL={{REGISTRY_URL}}
+NEXT_PUBLIC_LOCKER_URL={{LOCKER_URL}}
+PORT=3003
+
+# API Configuration
+REGISTRY_URL={{REGISTRY_URL}}
+LOCKER_URL={{LOCKER_URL}}
+
+# Logging
+LOG_LEVEL=info
+NODE_ENV=development

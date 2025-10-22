@@ -1,0 +1,73 @@
+{
+  "factors": [
+    {
+      "id": "FCT-DEMO-IN-2024",
+      "name": "India Solar Grid Emission Factor 2024",
+      "value": 0.82,
+      "unit": "tCO2e/MWh",
+      "source": "Central Electricity Authority of India",
+      "year": 2024,
+      "region": "IN",
+      "description": "Grid emission factor for India's electricity grid in 2024"
+    },
+    {
+      "id": "FCT-DEMO-US-2024",
+      "name": "US Solar Grid Emission Factor 2024",
+      "value": 0.37,
+      "unit": "tCO2e/MWh",
+      "source": "EPA eGRID",
+      "year": 2024,
+      "region": "US",
+      "description": "Grid emission factor for US electricity grid in 2024"
+    },
+    {
+      "id": "FCT-DEMO-EU-2024",
+      "name": "EU Solar Grid Emission Factor 2024",
+      "value": 0.28,
+      "unit": "tCO2e/MWh",
+      "source": "European Environment Agency",
+      "year": 2024,
+      "region": "EU",
+      "description": "Grid emission factor for EU electricity grid in 2024"
+    }
+  ],
+  "methodologies": [
+    {
+      "id": "RE-SOLAR",
+      "name": "Renewable Energy - Solar",
+      "version": "1.0",
+      "description": "Methodology for solar energy projects",
+      "applicableRegions": ["IN", "US", "EU"],
+      "baselineRequirements": [
+        "Grid connection analysis",
+        "Historical generation data",
+        "Technology specifications"
+      ],
+      "monitoringRequirements": [
+        "Daily generation monitoring",
+        "Monthly reporting",
+        "Annual verification"
+      ]
+    }
+  ],
+  "regions": [
+    {
+      "code": "IN",
+      "name": "India",
+      "currency": "INR",
+      "timezone": "Asia/Kolkata"
+    },
+    {
+      "code": "US",
+      "name": "United States",
+      "currency": "USD",
+      "timezone": "America/New_York"
+    },
+    {
+      "code": "EU",
+      "name": "European Union",
+      "currency": "EUR",
+      "timezone": "Europe/Brussels"
+    }
+  ]
+}

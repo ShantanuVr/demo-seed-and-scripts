@@ -1,0 +1,9 @@
+# IoT Oracle Environment
+REGISTRY_URL={{REGISTRY_URL}}
+ADAPTER_URL={{ADAPTER_URL}}
+REDIS_URL={{REDIS_URL}}
+PORT=4201
+
+# Logging
+LOG_LEVEL=info
+NODE_ENV=development
