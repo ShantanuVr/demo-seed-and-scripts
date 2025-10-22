@@ -1,12 +1,17 @@
 # Demo Seed and Scripts
 
-One-Click Orchestration, Seeding & Happy-Path Runner for Option-A Carbon Credit Stack
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/ShantanuVr/demo-seed-and-scripts)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)](compose.yaml)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Scripts-blue?logo=typescript)](scripts/)
+
+One-Click Orchestration, Seeding & Happy-Path Runner for Option-A Carbon Credit Stack with Buyer Marketplace Integration
 
 ## 🚀 Quick Start
 
 ```bash
 # Clone and setup
-git clone <repo-url>
+git clone https://github.com/ShantanuVr/demo-seed-and-scripts.git
 cd demo-seed-and-scripts
 
 # One command to rule them all
@@ -48,6 +53,38 @@ A fully functional carbon credit stack with:
 - **IoT Solar Sim** (Simulation): `http://localhost:4200`
 
 Plus infrastructure: PostgreSQL, Redis, MinIO, IPFS, and local blockchain.
+
+## ✨ Features
+
+### 🏗️ Complete Stack Orchestration
+- **14 Services**: Full carbon credit platform with buyer marketplace
+- **Docker Compose**: One-command deployment with health checks
+- **Service Dependencies**: Proper startup order and health validation
+- **Volume Persistence**: Data persists across restarts
+
+### 🎯 End-to-End Demo Flow
+- **Project Registration** → **Evidence Upload** → **Issuance Request**
+- **Verification** → **Minting** → **Transfer** → **Retirement** → **Certificate**
+- **IoT Anchoring** → **Marketplace Integration** → **Portfolio Management**
+
+### 🛠️ Developer Experience
+- **TypeScript Scripts**: Type-safe orchestration and seeding
+- **Idempotent Operations**: Safe to run multiple times
+- **Comprehensive Logging**: Pretty CLI output with colors and spinners
+- **Error Handling**: Graceful failures with helpful error messages
+
+### 🔐 Multi-Role Support
+- **Admin**: System administration and oversight
+- **Verifier**: Issuance review and approval
+- **Issuer**: Project and credit management
+- **Buyer**: Marketplace browsing and portfolio management
+
+### 📊 Realistic Demo Data
+- **Multi-Organization**: AdminOrg, VerifierOrg, SolarCo, BuyerCo
+- **Complete User Roles**: All user types with proper credentials
+- **Project with Evidence**: Solar Farm C with baseline and monitoring documents
+- **Credit Lifecycle**: Issuance, transfer, and retirement with certificates
+- **IoT Integration**: Real-time data collection and blockchain anchoring
 
 ## 📊 Demo Data
 
@@ -103,6 +140,30 @@ This repository provides orchestration and seeding for the Option-A carbon credi
 3. **Seed** realistic demo data
 4. **Run** end-to-end happy path scenarios
 5. **Test** system health and invariants
+6. **Integrate** buyer marketplace functionality
+
+### Service Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Registry Sim  │    │ Registry Adapter │    │ Evidence Locker │
+│   (Port 4000)   │◄──►│   (Port 4100)    │◄──►│   (Port 4600)    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         ▲                       ▲                       ▲
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Issuer Portal  │    │ Verifier Console│    │ Buyer Marketplace│
+│   (Port 3001)   │    │   (Port 3003)   │    │   (Port 3004)   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         ▲                       ▲                       ▲
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ Carbon Explorer │    │   IoT Oracle    │    │  IoT Solar Sim  │
+│   (Port 3002)   │    │   (Port 4201)   │◄──►│   (Port 4200)   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
 
 ## 🔧 Customization
 
@@ -115,6 +176,43 @@ This repository provides orchestration and seeding for the Option-A carbon credi
 
 See [TROUBLESHOOT.md](docs/TROUBLESHOOT.md) for common issues.
 
+## 🤝 Contributing
+
+We welcome contributions! Please see our contributing guidelines:
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
+
+### Development Setup
+
+```bash
+# Clone your fork
+git clone https://github.com/YOUR_USERNAME/demo-seed-and-scripts.git
+cd demo-seed-and-scripts
+
+# Install dependencies
+pnpm install
+
+# Run the demo
+make demo
+```
+
+### Code Style
+
+- **TypeScript**: Use strict typing and proper interfaces
+- **Scripts**: Follow the existing pattern with error handling
+- **Documentation**: Update docs for any new features
+- **Testing**: Add smoke tests for new functionality
+
 ## 📄 License
 
-MIT License - see LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built for the Option-A Carbon Credit Stack
+- Integrates buyer marketplace functionality
+- Provides comprehensive demo and testing capabilities
